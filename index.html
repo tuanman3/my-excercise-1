@@ -5,9 +5,54 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>my-excercise-1</title>
+    <!-- font css -->
+    <link href="/assets/fonts/roboto.css" rel="stylesheet" />
+    <link href="assets/fonts/razerf5.css" rel="stylesheet" />
+    <!-- global css -->
+    <link href="/assets/css/main.css" rel="stylesheet" />
+    <link href="/assets/css/nav.css" rel="stylesheet" />
+    <link href="/assets/css/dropdown.css" rel="stylesheet" />
+    <link href="/assets/css/switch.css" rel="stylesheet" />
+    <link href="/assets/css/slider.css" rel="stylesheet" />
+    <link href="/assets/css/checkbox.css" rel="stylesheet" />
+    <link href="/assets/css/tooltip.css" rel="stylesheet" />
+    <!-- local css -->
+    <link href="/assets/css/profile-bar.css" rel="stylesheet" />
+    <link href="/assets/css/body-widgets.css" rel="stylesheet" />
+    <style type="text/css">
+      .h2-title .switch {
+        position: relative;
+        top: 3px;
+        left: 10px;
+      }
+      #micEnhance .slider-container {
+        width: 490px;
+        margin-left: 30px;
+        height: 0;
+        opacity: 0;
+        overflow: hidden;
+
+        will-change: height, opacity;
+        transition:
+          height 0.3s,
+          opacity 0.3s;
+      }
+      #micEnhance .slider-container.on {
+        height: 64px;
+        opacity: 1;
+        overflow: unset;
+        margin-bottom: 20px;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+
+    <script src="/assets/js/main.js"></script>
+    <script src="/assets/js/dropdown.js"></script>
+    <script src="/assets/js/switch.js"></script>
+    <script src="/assets/js/slider.js"></script>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
