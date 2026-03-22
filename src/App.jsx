@@ -1,67 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
-// Nếu bạn có file CSS tổng, hãy import ở đây. Hoặc giữ link trong index.html cũng được.
-// import './App.css';
-// --- COMPONENT DROP_DOWN DÙNG CHUNG ---
-// const CustomDropdown = ({
-//   id,
-//   options,
-//   selected,
-//   onSelect,
-//   className,
-//   isActionMenu = false,
-// }) => {
-//   const [isOpen, setIsOpen] = useState(false);
-//   const dropRef = useRef(null);
-
-//   // Đóng menu khi click ra ngoài
-//   useEffect(() => {
-//     const handleClickOutside = (e) => {
-//       if (dropRef.current && !dropRef.current.contains(e.target))
-//         setIsOpen(false);
-//     };
-//     document.addEventListener("mousedown", handleClickOutside);
-//     return () => document.removeEventListener("mousedown", handleClickOutside);
-//   }, []);
-
-//   return (
-//     <div
-//       className={`dropdown-area ${className}`}
-//       ref={dropRef}
-//       style={{ position: "relative" }}
-//     >
-//       {/* Nút bấm trigger */}
-//       <div
-//         className={
-//           isActionMenu
-//             ? "dots3 hover-border"
-//             : `s3-dropdown ${isOpen ? "expand" : ""}`
-//         }
-//         onClick={() => setIsOpen(!isOpen)}
-//       >
-//         {!isActionMenu && <div className="selected">{selected}</div>}
-//         {!isActionMenu && <div className="icon expand"></div>}
-//       </div>
-
-//       {/* Danh sách options */}
-//       <div
-//         className={`s3-options flex ${isActionMenu ? "action-menu" : ""} ${isOpen ? "expand" : ""}`}
-//       >
-//         {options.map((opt, idx) => (
-//           <div
-//             key={idx}
-//             className={`option ${opt === selected ? "selected" : ""}`}
-//             onClick={() => {
-//               onSelect(opt);
-//               setIsOpen(false);
-//             }}
-//           >
-//             {opt}
-//           </div>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// };
+import React, { useState, useEffect, useRef, useCallback } from "react";
 
 function App() {
   // === STATE QUẢN LÝ UI ===
@@ -82,9 +19,9 @@ function App() {
     clarity: false,
   });
   const [enhanceVolumes, setEnhanceVolumes] = useState({
-    norm: 50,
-    amb: 50,
-    clarity: 50,
+    norm: 55,
+    amb: 55,
+    clarity: 55,
   });
 
   // Trạng thái cho Dropdown Profile
@@ -101,6 +38,9 @@ function App() {
     "profile 8",
   ]);
 
+  const [isDotsMenuOpen, setIsDotsMenuOpen] = useState(false);
+  const dotsMenuRef = useRef(null);
+
   const profileDropRef = useRef(null); // Để xử lý click ra ngoài đóng dropdown
 
   // === CÁC CUSTOM COMPONENT LOKAL ===
@@ -116,63 +56,69 @@ function App() {
   );
 
   // 2. Component Slider (Thanh kéo) - Đã React-hóa logic từ slider.js
-  const RazerSlider = ({
-    id,
-    min,
-    max,
-    value,
-    onChange,
-    disabled,
-    minText,
-    maxText,
-  }) => {
-    const pct = ((value - min) / (max - min)) * 100;
+  const RazerSlider = useCallback(
+    ({
+      id,
+      min,
+      max,
+      value,
+      onChange,
+      disabled,
+      minText,
+      maxText,
+      SLIDER_WIDTH = 520, // Exact từ thiết kế (sau padding)
+    }) => {
+      const THUMB_SIZE = 20; // Thumb width
+      const TIP_WIDTH = 30; // Tip width
 
-    return (
-      <div className={`slider-container ${disabled ? "" : "on"}`} id={id}>
-        {/* Nhãn văn bản (logic chèn div min/max/mid) */}
-        <div className="foot min">{minText || "low"}</div>
-        <div className="foot mid">medium</div>
-        <div className="foot max">{maxText || "high"}</div>
+      // ✅ CÔNG THỨC EXACT từ slider.js gốc
+      const percent = (value - min) / (max - min);
+      const fillWidth = percent * (SLIDER_WIDTH - THUMB_SIZE) + 8;
+      const tipLeft = percent * (SLIDER_WIDTH - THUMB_SIZE) - TIP_WIDTH / 2 + 8;
 
-        {/* Thanh fill và track (logic chèn div fill/track) */}
+      return (
         <div
-          className="left"
-          style={{
-            width: disabled ? 0 : `${pct}%`,
-            opacity: disabled ? 0 : 1,
-            transition: "width .15s ease, opacity .3s ease",
-            pointerEvents: "none",
-          }}
-        />
-        <div className="track" style={{ pointerEvents: "none" }} />
-        {/* Bong bóng tip (logic chèn div tip) */}
-        <div
-          className="slider-tip"
-          style={{
-            left: `calc(${pct}% - 15px)`,
-            opacity: disabled ? 0 : 1, // ← fade khi disabled
-            transition: "left .1s, opacity .3s ease",
-          }}
+          className={`slider-container ${disabled ? "" : "on"}`}
+          id={id}
+          style={{ width: `${SLIDER_WIDTH}px` }}
         >
-          {value}
+          <div className="foot min">{minText || "low"}</div>
+          <div className="foot mid">medium</div>
+          <div className="foot max">{maxText || "high"}</div>
+
+          <div className="track" />
+          <div
+            className="left"
+            style={{
+              width: `${fillWidth}px`,
+            }}
+          />
+          <div
+            className="slider-tip"
+            style={{
+              left: `${tipLeft}px`,
+            }}
+          >
+            {value}
+          </div>
+
+          {/* ✅ INPUT FULL POWER */}
+          <input
+            type="range"
+            id={`${id}Range`}
+            min={min}
+            max={max}
+            value={value}
+            step="1"
+            className="slider"
+            disabled={disabled}
+            onChange={(e) => onChange(e.target.value)}
+          />
         </div>
-
-        {/* Input gốc */}
-        <input
-          type="range"
-          min={min}
-          max={max}
-          value={value}
-          step="1"
-          className="slider"
-          disabled={disabled}
-          onChange={(e) => onChange(parseInt(e.target.value))}
-        />
-      </div>
-    );
-  };
-
+      );
+    },
+    [],
+  );
   // 3. Component Dropdown (Logic từ dropdown.js)
   const RazerDropdown = ({
     id,
@@ -255,7 +201,7 @@ function App() {
       }
 
       case "Duplicate": {
-        const dupName = `${profileOptions} (Copy)`;
+        const dupName = `${selectedProfile} (Copy)`;
         setProfileOptions([...profileOptions, dupName]);
         setSelectedProfile(dupName);
         break;
@@ -322,35 +268,56 @@ function App() {
         <div className="profile-bar flex">
           <div className="loader" tooltip="Syncing Profiles"></div>
           <div>profile</div>
-          {/* <CustomDropdown
-            options={profileOptions}
-            selected={selectedProfile}
-            onSelect={setSelectedProfile}
-          />
-          <CustomDropdown
-            isActionMenu={true}
-            options={[
-              "Add",
-              "Rename",
-              "Duplicate",
-              "Export",
-              "Import",
-              "Delete",
-            ]}
-            onSelect={(action) => handleProfileAction(action)}
-          /> */}
 
           <RazerDropdown
             id="profileDrop"
             options={profileOptions}
             selected={selectedProfile}
-            onSelect={handleProfileAction}
+            onSelect={setSelectedProfile}
             isOpen={isProfileOpen}
             setIsOpen={setIsProfileOpen}
             dropRef={profileDropRef}
           />
 
-          <div className="dots3 hover-border" id="profileMenuToggle"></div>
+          {/* ✅ DOTS3 MENU HOÀN CHỈNH */}
+          <div
+            className={`dots3 hover-border ${isDotsMenuOpen ? "active" : ""}`}
+            ref={dotsMenuRef}
+            onClick={() => setIsDotsMenuOpen(!isDotsMenuOpen)}
+          >
+            {/* ✅ MENU DROPDOWN */}
+            {isDotsMenuOpen && (
+              <div className="profile-action-menu show">
+                {[
+                  "Add",
+                  "Import",
+                  "Rename",
+                  "Duplicate",
+                  "Export",
+                  "Delete",
+                ].map((action) => (
+                  <div
+                    key={action}
+                    className="act action"
+                    onClick={() => {
+                      if (action === "Delete") {
+                        if (window.confirm(`Delete "${selectedProfile}"?`)) {
+                          handleProfileAction(action);
+                        }
+                      } else {
+                        handleProfileAction(action);
+                      }
+                      setIsDotsMenuOpen(false);
+                    }}
+                  >
+                    {action}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* <div className="dots3 hover-border" id="profileMenuToggle"></div> */}
           <div className="obm hover-border" tooltip="On-board Profiles"></div>
           <div className="divider"></div>
           <div className="batt batt-30" tooltip="30% Battery"></div>
@@ -450,6 +417,7 @@ function App() {
                   </div>
                   <RazerSlider
                     id={`sl${type}`}
+                    SLIDER_WIDTH={490}
                     min={10}
                     max={100}
                     value={enhanceVolumes[type]}
