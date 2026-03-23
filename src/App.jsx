@@ -38,11 +38,62 @@ function App() {
     "profile 8",
   ]);
 
+  // ✅ STATE MỚI CHO INLINE RENAME
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const renameInputRef = useRef(null);
+
   const [isDotsMenuOpen, setIsDotsMenuOpen] = useState(false);
   const dotsMenuRef = useRef(null);
 
   const profileDropRef = useRef(null); // Để xử lý click ra ngoài đóng dropdown
 
+  // === INLINE RENAME LOGIC ===
+  // Bắt đầu rename mode
+  const startRename = useCallback(() => {
+    setIsRenaming(true);
+    setRenameValue(selectedProfile);
+    // Focus input sau khi render
+    setTimeout(() => {
+      renameInputRef.current?.select();
+    }, 0);
+  }, [selectedProfile]);
+
+  // Commit rename
+  const commitRename = useCallback(() => {
+    if (renameValue.trim() && renameValue !== selectedProfile) {
+      // Update profile options
+      const newProfiles = profileOptions.map((p) =>
+        p === selectedProfile ? renameValue.trim() : p,
+      );
+      setProfileOptions(newProfiles);
+      setSelectedProfile(renameValue.trim());
+    }
+    setIsRenaming(false);
+    setRenameValue("");
+  }, [renameValue, selectedProfile, profileOptions]);
+
+  // Cancel rename
+  const cancelRename = useCallback(() => {
+    setIsRenaming(false);
+    setRenameValue("");
+  }, []);
+
+  // Effect xử lý ESC/Enter key cho rename
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!isRenaming) return;
+
+      if (e.key === "Enter") {
+        commitRename();
+      } else if (e.key === "Escape") {
+        cancelRename();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isRenaming, commitRename, cancelRename]);
   // === CÁC CUSTOM COMPONENT LOKAL ===
 
   // 1. Component Switch (Nút gạt)
@@ -128,6 +179,12 @@ function App() {
     isOpen,
     setIsOpen,
     dropRef,
+    isRenaming,
+    renameValue,
+    onRenameChange,
+    onRenameCommit,
+    renameInputRef,
+    startRename,
   }) => {
     // Xử lý click ra ngoài để đóng
     useEffect(() => {
@@ -135,44 +192,84 @@ function App() {
         if (dropRef.current && !dropRef.current.contains(event.target)) {
           setIsOpen(false);
         }
+
+        // Click outside rename input -> commit
+        if (
+          isRenaming &&
+          renameInputRef.current &&
+          !renameInputRef.current.contains(event.target)
+        ) {
+          onRenameCommit();
+        }
       };
       document.addEventListener("mousedown", handleClickOutside);
       return () =>
         document.removeEventListener("mousedown", handleClickOutside);
-    }, [dropRef, setIsOpen]);
+    }, [dropRef, setIsOpen, isRenaming, renameInputRef, onRenameCommit]);
 
     return (
       <div className="dropdown-area" ref={dropRef}>
         <div
           id={id}
           className={`s3-dropdown ${isOpen ? "expand" : ""}`}
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={isRenaming ? undefined : () => setIsOpen(!isOpen)}
         >
-          <div className="selected">{selected}</div>
-          <div className="icon expand"></div>
-        </div>
-        <div
-          id={`${id}Opt`}
-          className={`s3-options flex ${isOpen ? "expand" : ""}`}
-          style={{
-            // Thêm logic tính toán top/bottom nếu cần giống hệt toggleDropdown
-            top: "27px",
-            bottom: "unset",
-          }}
-        >
-          {options.map((option) => (
-            <div
-              key={option}
-              className={`option ${option === selected ? "selected" : ""}`}
-              onClick={() => {
-                onSelect(option);
-                setIsOpen(false);
+          {/* INLINE EDIT MODE */}
+          {isRenaming ? (
+            <input
+              ref={renameInputRef}
+              className="profile-rename-input"
+              value={renameValue}
+              onChange={(e) => onRenameChange(e.target.value)}
+              onBlur={onRenameCommit}
+              autoFocus
+              style={{
+                zIndex: 100,
+                position: "absolute",
+                border: "1px solid #44d62c",
+                boxSizing: "border-box",
+                background: "#111",
+                padding: "5px 6px",
+                fontSize: "14px",
+                lineHeight: "17px",
+                color: "#ccc",
+                height: "27px",
+                width: "230px",
+                outline: "none",
+                marginLeft: "-6px",
+                marginTop: "-5px",
               }}
-            >
-              {option}
-            </div>
-          ))}
+            />
+          ) : (
+            <>
+              <div className="selected" onDoubleClick={startRename}>
+                {selected}
+              </div>
+              <div className="icon expand"></div>
+            </>
+          )}
         </div>
+
+        {!isRenaming && (
+          <div
+            id={`${id}Opt`}
+            className={`s3-options flex ${isOpen ? "expand" : ""}`}
+            style={{ top: "27px", bottom: "unset" }}
+          >
+            {options.map((option) => (
+              <div
+                key={option}
+                className={`option ${option === selected ? "selected" : ""}`}
+                onClick={() => {
+                  onSelect(option);
+                  setIsOpen(false);
+                }}
+              >
+                {option}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -189,8 +286,9 @@ function App() {
   // === RENDER CHÍNH (JSX) ===
 
   // --- LOGIC XỬ LÝ PROFILE (Dựa trên dropdown.js) ---
+
   const handleProfileAction = (action) => {
-    let newProfiles = [...profileOptions];
+    // let newProfiles = [...profileOptions];
 
     switch (action) {
       case "Add": {
@@ -201,7 +299,21 @@ function App() {
       }
 
       case "Duplicate": {
-        const dupName = `${selectedProfile} (Copy)`;
+        let baseName = selectedProfile;
+        let counter = 1;
+
+        const open = baseName.lastIndexOf("(");
+        const close = baseName.lastIndexOf(")");
+
+        if (open > 0 && close > 0 && close > open) {
+          const num = parseInt(baseName.substring(open + 1, close));
+          if (!isNaN(num)) {
+            counter = num + 1;
+            baseName = baseName.substring(0, open).trimEnd();
+          }
+        }
+
+        const dupName = `${baseName} (${counter})`;
         setProfileOptions([...profileOptions, dupName]);
         setSelectedProfile(dupName);
         break;
@@ -219,20 +331,14 @@ function App() {
       }
 
       case "Rename": {
-        const renamed = prompt("Enter new profile name:", selectedProfile);
-        if (renamed) {
-          newProfiles = profileOptions.map((p) =>
-            p === selectedProfile ? renamed : p,
-          );
-          setProfileOptions(newProfiles);
-          setSelectedProfile(renamed);
-        }
+        startRename();
         break;
       }
 
       default:
         break;
     }
+    setIsDotsMenuOpen(false);
   };
   return (
     <div className="main-container">
@@ -277,6 +383,13 @@ function App() {
             isOpen={isProfileOpen}
             setIsOpen={setIsProfileOpen}
             dropRef={profileDropRef}
+            isRenaming={isRenaming}
+            renameValue={renameValue}
+            onRenameChange={setRenameValue}
+            onRenameCommit={commitRename}
+            onRenameCancel={cancelRename}
+            renameInputRef={renameInputRef}
+            startRename={startRename}
           />
 
           {/* ✅ DOTS3 MENU HOÀN CHỈNH */}
@@ -287,31 +400,46 @@ function App() {
           >
             {/* ✅ MENU DROPDOWN */}
             {isDotsMenuOpen && (
-              <div className="profile-action-menu show">
+              <div
+                className="profile-action-menu show"
+                style={{
+                  animation: "menuFadeIn 0.15s ease forwards",
+                }}
+              >
                 {[
-                  "Add",
-                  "Import",
-                  "Rename",
-                  "Duplicate",
-                  "Export",
-                  "Delete",
-                ].map((action) => (
-                  <div
-                    key={action}
-                    className="act action"
-                    onClick={() => {
-                      if (action === "Delete") {
-                        if (window.confirm(`Delete "${selectedProfile}"?`)) {
-                          handleProfileAction(action);
+                  { label: "Add" },
+                  { label: "Import", divider: true },
+                  { label: "Rename" },
+                  { label: "Duplicate" },
+                  { label: "Export", divider: true },
+                  { label: "Delete" },
+                ].map(({ label, divider }) => (
+                  <React.Fragment key={label}>
+                    <div
+                      className="act action"
+                      onClick={() => {
+                        if (label === "Delete") {
+                          if (window.confirm(`Delete "${selectedProfile}"?`)) {
+                            handleProfileAction(label);
+                          }
+                        } else {
+                          handleProfileAction(label);
                         }
-                      } else {
-                        handleProfileAction(action);
-                      }
-                      setIsDotsMenuOpen(false);
-                    }}
-                  >
-                    {action}
-                  </div>
+                        setIsDotsMenuOpen(false);
+                      }}
+                    >
+                      {label}
+                    </div>
+                    {divider && (
+                      <div
+                        style={{
+                          height: "1px",
+                          backgroundColor: "#5d5d5d",
+                          margin: "2px 8px",
+                        }}
+                      />
+                    )}
+                  </React.Fragment>
                 ))}
               </div>
             )}
