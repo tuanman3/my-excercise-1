@@ -15,6 +15,10 @@ function MicrophoneWidget({
   return (
     <div className="widget" id="micPhone">
       <div className="help"></div>
+      <div class="tip">
+        I'm just a tooltip. I'm just a tooltip. I'm just a tooltip. I'm just a
+        tooltip. I'm just a tooltip.
+      </div>
       <div className="title">
         microphone
         <RazerSwitch isOn={isMicOn} onToggle={() => setIsMicOn(!isMicOn)} />

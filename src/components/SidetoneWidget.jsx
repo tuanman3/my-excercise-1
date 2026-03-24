@@ -6,6 +6,10 @@ function SidetoneWidget({ isSideOn, setIsSideOn, sidetone, setSidetone }) {
   return (
     <div className="widget" id="micSidetone">
       <div className="help"></div>
+      <div class="tip">
+        I'm just a tooltip. I'm just a tooltip. I'm just a tooltip. I'm just a
+        tooltip. I'm just a tooltip.
+      </div>
       <div className="title">
         sidetone
         <RazerSwitch isOn={isSideOn} onToggle={() => setIsSideOn(!isSideOn)} />

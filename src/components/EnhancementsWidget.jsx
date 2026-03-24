@@ -11,6 +11,10 @@ function EnhancementsWidget({
   return (
     <div className="widget" id="micEnhance">
       <div className="help"></div>
+      <div className="tip">
+        I'm just a tooltip. I'm just a tooltip. I'm just a tooltip. I'm just a
+        tooltip. I'm just a tooltip.
+      </div>
       <div className="title">enhancements</div>
 
       {ENHANCEMENTS.map(({ type, label }) => (

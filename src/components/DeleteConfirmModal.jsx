@@ -2,7 +2,15 @@ import React from "react";
 
 function DeleteConfirmModal({ onConfirm, onCancel }) {
   return (
-    <div className="modal-overlay" onClick={onCancel}>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 998,
+        background: "transparent",
+      }}
+      onClick={onCancel}
+    >
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="modal-title">DELETE PROFILE</div>
         <div className="modal-body">

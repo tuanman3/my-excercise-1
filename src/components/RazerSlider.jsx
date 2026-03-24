@@ -1,8 +1,5 @@
 import React from "react";
 
-const THUMB_SIZE = 20;
-const TIP_WIDTH = 30;
-
 function RazerSlider({
   id,
   min,
@@ -12,25 +9,30 @@ function RazerSlider({
   disabled,
   minText,
   maxText,
-  SLIDER_WIDTH = 520,
 }) {
-  const percent = (value - min) / (max - min);
-  const fillWidth = percent * (SLIDER_WIDTH - THUMB_SIZE) + 8;
-  const tipLeft = percent * (SLIDER_WIDTH - THUMB_SIZE) - TIP_WIDTH / 2 + 8;
+  const pct = ((value - min) / (max - min)) * 100;
 
   return (
-    <div
-      className={`slider-container ${disabled ? "" : "on"}`}
-      id={id}
-      style={{ width: `${SLIDER_WIDTH}px` }}
-    >
+    <div className={`slider-container ${disabled ? "" : "on"}`} id={id}>
       <div className="foot min">{minText || "low"}</div>
       <div className="foot mid">medium</div>
       <div className="foot max">{maxText || "high"}</div>
 
       <div className="track" />
-      <div className="left" style={{ width: `${fillWidth}px` }} />
-      <div className="slider-tip" style={{ left: `${tipLeft}px` }}>
+      <div
+        className="left"
+        style={{
+          width: `calc(${pct}% * (100% - 16px) / 100% + 8px)`,
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        className="slider-tip"
+        style={{
+          left: `calc(8px + ${pct} * (100% - 16px) / 100 - 15px)`,
+          pointerEvents: "none",
+        }}
+      >
         {value}
       </div>
 
@@ -43,7 +45,7 @@ function RazerSlider({
         step="1"
         className="slider"
         disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(parseInt(e.target.value))}
       />
     </div>
   );
