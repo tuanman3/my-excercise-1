@@ -67,7 +67,7 @@
   pointer-events: none;
 
   will-change: left;
-  transition: left 0.1s;
+  /* transition: left 0.1s; */
 }
 .slider-container.no-tip {
   height: 36px;
